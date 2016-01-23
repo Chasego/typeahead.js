@@ -13,7 +13,7 @@ var LruCache = (function() {
     this.maxSize = _.isNumber(maxSize) ? maxSize : 100;
     this.reset();
 
-    // if max size is less than 0, provide a noop cache
+    // if max size is less than or equal to 0, provide a noop cache
     if (this.maxSize <= 0) {
       this.set = this.get = $.noop;
     }
@@ -21,29 +21,28 @@ var LruCache = (function() {
 
   _.mixin(LruCache.prototype, {
     set: function set(key, val) {
-      var tailItem = this.list.tail, node;
-
-      // at capacity
-      if (this.size >= this.maxSize) {
-        this.list.remove(tailItem);
-        delete this.hash[tailItem.key];
-
-        this.size--;
-      }
-
-      // writing over existing key
-      if (node = this.hash[key]) {
+      var node;
+      
+      if (key in this.hash) {
+        // writing over existing key
+        node = this.hash[key];
         node.val = val;
         this.list.moveToFront(node);
-      }
-
-      // new key
-      else {
+      } else {
+        // at capacity
+        if (this.size == this.maxSize) {
+          var tailItem = this.list.tail,
+          
+          this.list.remove(tailItem);
+          delete this.hash[tailItem.key];
+          this.size--;
+        }
+      
+        // new key
         node = new Node(key, val);
-
+        
         this.list.add(node);
         this.hash[key] = node;
-
         this.size++;
       }
     },
